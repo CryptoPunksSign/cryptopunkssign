@@ -14,9 +14,19 @@ contract CryptoPunksSign is ERC721URIStorage {
     uint256 private _totalSupply;
     address private _manager;
     address payable _cryptoPunksDao;
-    CryptoPunksMarket private _cryptoPunksContract;
-    // A record of the highest punk bid
-    mapping (uint256 => uint256) public punkBids;
+    address private _cryptoPunksContract;
+    // A record of punks - sign
+    mapping (uint256 => uint256) private punkSignBind;
+    struct User {
+        string name;
+        uint256 ID_Index;
+        string ID_DID;
+    }
+    
+     // A record of the signpunks - twitter
+    mapping (uint256 => string) private punksTwitter;
+     // A record of the signpunks - user
+    mapping (uint256 => User) private punksUserBind;
     
     modifier onlyOwner() {
         require(msg.sender == _manager);
@@ -32,7 +42,8 @@ contract CryptoPunksSign is ERC721URIStorage {
     }
     
     function setCryptoPunksContract(address cryptoPunksAddress)public onlyOwner {
-        
+        require(isContract(cryptoPunksAddress),"setCryptoPunksContract: address error .");
+        _cryptoPunksContract = cryptoPunksAddress;
     }
     
     function getMintPrice() public view returns(uint256){
@@ -44,18 +55,18 @@ contract CryptoPunksSign is ERC721URIStorage {
         return mulDiv(1,1e18,100);
     } 
     
-    constructor() ERC721("CryptoPunksSign", "CryptoPunksSign") {
+    constructor() ERC721("CryptoPunksSign", "Ͼ") {
         _manager = msg.sender;
     }
 
-    function mintCryptoPunksSign(string memory tokenURI)
+    function mintCryptoPunksSign(string memory tokenURI,string memory twitter)
         payable
         public
         returns (uint256)
     {
         require(_cryptoPunksDao != address(0x0),"mintCryptoPunksSign: address error !");
         require(_totalSupply < 10000,"mintCryptoPunksSign: Total 10000 !");
-        if(_tokenIds > 1){
+        if(_tokenIds > 2){
             uint256 fees = getMintPrice();
             require(fees <= msg.value,"mintCryptoPunksSign: msg.value error !");
             _cryptoPunksDao.transfer(fees);
@@ -65,9 +76,31 @@ contract CryptoPunksSign is ERC721URIStorage {
         uint256 newItemId = _tokenIds;
         _mint(msg.sender, newItemId);
         _setTokenURI(newItemId, tokenURI);
+        punksTwitter[newItemId] = twitter;
         return newItemId;
     }
     
+    function cryptoPunksClaim(uint256 index,string memory tokenURI,string memory twitter)
+        public
+        returns (uint256)
+    {
+        require(_cryptoPunksDao != address(0x0),"mintCryptoPunksSign: address error !");
+        require(_totalSupply < 10000,"mintCryptoPunksSign: Total 10000 !");
+        CryptoPunksMarket cryptoPunks =  CryptoPunksMarket(_cryptoPunksContract);
+        address cryptoPunksUser = cryptoPunks.punkIndexToAddress(index);
+        require(cryptoPunksUser == msg.sender,"cryptoPunksClaim: no punks .");
+        require(punkSignBind[index] == 0,"cryptoPunksClaim: exist claim .");
+        _tokenIds++;
+        _totalSupply++;
+        uint256 newItemId = _tokenIds;
+        _mint(msg.sender, newItemId);
+        _setTokenURI(newItemId, tokenURI);
+        punkSignBind[index] = newItemId;
+        punksTwitter[newItemId] = twitter;
+        return newItemId;
+    }
+    
+
     function updatePunksSign(uint256 index,string memory tokenURI)
         payable
         public
@@ -80,30 +113,62 @@ contract CryptoPunksSign is ERC721URIStorage {
         _setTokenURI(index, tokenURI);
         return true;
     }
-    
-    function cryptoPunksClaim(uint256 index,string memory tokenURI)
+
+
+    function updatePunksTwitter(uint256 index,string memory twitter)
         public
-        returns (uint256)
+        returns(bool)
     {
-        require(_cryptoPunksDao != address(0x0),"mintCryptoPunksSign: address error !");
-        require(_totalSupply < 10000,"mintCryptoPunksSign: Total 10000 !");
-        CryptoPunksMarket cryptoPunks =  CryptoPunksMarket(_cryptoPunksContract);
-        address cryptoPunksUser = cryptoPunks.punkIndexToAddress(index);
-        require(cryptoPunksUser == msg.sender,"cryptoPunksClaim: no punks .");
-        require(punkBids[index] == 0,"cryptoPunksClaim: exist claim .");
-        _tokenIds++;
-        _totalSupply++;
-        uint256 newItemId = _tokenIds;
-        _mint(msg.sender, newItemId);
-        _setTokenURI(newItemId, tokenURI);
-        punkBids[index] = newItemId;
-        return newItemId;
+        require(index <= _tokenIds, "updatePunksSign: no index .");
+        require(ownerOf(index) == msg.sender,"updatePunksSign: no permission .");
+        punksTwitter[index] = twitter;
+        return true;
     }
-    
+
     function totalSupply() public view returns (uint256) {
         return _totalSupply;
     }
     
+    function getpunksTwitter(uint256 signPunks)public view returns(string memory twitter){
+        require(signPunks <= _tokenIds, "getpunksTwitter: no index .");
+        return punksTwitter[signPunks];
+    }
+    
+    function getActiveState(uint256 signPunks) public view returns(bool){
+        if(signPunks > _tokenIds){
+            return false;
+        }
+        if(ownerOf(signPunks) != msg.sender){
+            return false;
+        }
+        User storage _user = punksUserBind[signPunks];
+        if(_user.ID_Index > 0){
+            return true;
+        }
+        return false;
+    }
+    
+    function activateUser(uint256 signPunks,string memory name,uint256 id_index,string memory id_did) payable public {
+        require(signPunks <= _tokenIds, "activateUser: no signPunks .");
+        require(ownerOf(signPunks) == msg.sender,"activateUser: no permission .");
+        require(getUpdateSignPrice() <= msg.value,"activateUser: msg.value error !");
+        _cryptoPunksDao.transfer(getUpdateSignPrice());
+        
+         User storage _user = punksUserBind[signPunks];
+        _user.name = name;
+        _user.ID_Index = id_index;
+        _user.ID_DID = id_did;
+        punksUserBind[signPunks] = _user;
+    }
+    
+    function getUserInfo(uint256 signPunks)public view returns(uint256 state,uint256 id_index,string memory name,string memory id_did){
+        if(getActiveState(signPunks)){
+            User storage _user = punksUserBind[signPunks];
+            return(10,_user.ID_Index,_user.name,_user.ID_DID);
+        }
+        return(0,0,"","");
+    }
+
     /**
      * @dev Returns true if `account` is a contract.
      *
