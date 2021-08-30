@@ -25,6 +25,8 @@ contract CryptoPunksSign is ERC721URIStorage {
     
      // A record of the signpunks - twitter
     mapping (uint256 => string) private punksTwitter;
+    // A record of the signpunks - twitter
+    mapping (uint256 => string) private punksNote;
      // A record of the signpunks - user
     mapping (uint256 => User) private punksUserBind;
     
@@ -53,13 +55,13 @@ contract CryptoPunksSign is ERC721URIStorage {
     
     function getUpdateSignPrice() public pure returns(uint256){
         return mulDiv(1,1e18,100);
-    } 
+    }
     
     constructor() ERC721("CryptoPunksSign", "PunksSign") {
         _manager = msg.sender;
     }
 
-    function mintCryptoPunksSign(string memory tokenURI,string memory twitter)
+    function mintCryptoPunksSign(string memory tokenURI,string memory twitter, string memory notes)
         payable
         public
         returns (uint256)
@@ -77,15 +79,16 @@ contract CryptoPunksSign is ERC721URIStorage {
         _mint(msg.sender, newItemId);
         _setTokenURI(newItemId, tokenURI);
         punksTwitter[newItemId] = twitter;
+        punksNote[newItemId] = notes;
         return newItemId;
     }
     
-    function cryptoPunksClaim(uint256 index,string memory tokenURI,string memory twitter)
+    function cryptoPunksClaim(uint256 index,string memory tokenURI,string memory twitter,string memory notes)
         public
         returns (uint256)
     {
-        require(_cryptoPunksDao != address(0x0),"mintCryptoPunksSign: address error !");
-        require(_totalSupply < 10000,"mintCryptoPunksSign: Total 10000 !");
+        require(_cryptoPunksDao != address(0x0),"cryptoPunksClaim: address error !");
+        require(_totalSupply < 10000,"cryptoPunksClaim: Total 10000 !");
         CryptoPunksMarket cryptoPunks =  CryptoPunksMarket(_cryptoPunksContract);
         address cryptoPunksUser = cryptoPunks.punkIndexToAddress(index);
         require(cryptoPunksUser == msg.sender,"cryptoPunksClaim: no punks .");
@@ -97,6 +100,7 @@ contract CryptoPunksSign is ERC721URIStorage {
         _setTokenURI(newItemId, tokenURI);
         punkSignBind[index] = newItemId;
         punksTwitter[newItemId] = twitter;
+        punksNote[newItemId] = notes;
         return newItemId;
     }
     
@@ -119,19 +123,30 @@ contract CryptoPunksSign is ERC721URIStorage {
         public
         returns(bool)
     {
-        require(index <= _tokenIds, "updatePunksSign: no index .");
-        require(ownerOf(index) == msg.sender,"updatePunksSign: no permission .");
+        require(index <= _tokenIds, "updatePunksTwitter: no index .");
+        require(ownerOf(index) == msg.sender,"updatePunksTwitter: no permission .");
         punksTwitter[index] = twitter;
         return true;
     }
 
+    function updatePunksNote(uint256 index,string memory notes)
+        public
+        returns(bool)
+    {
+        require(index <= _tokenIds, "updatePunksNote: no index .");
+        require(ownerOf(index) == msg.sender,"updatePunksNote: no permission .");
+        punksNote[index] = notes;
+        return true;
+    }
+
+
     function totalSupply() public view returns (uint256) {
         return _totalSupply;
     }
-    
-    function getpunksTwitter(uint256 signPunks)public view returns(string memory twitter){
-        require(signPunks <= _tokenIds, "getpunksTwitter: no index .");
-        return punksTwitter[signPunks];
+
+    function getpunksInfo(uint256 signPunks)public view returns(string memory twitter,string memory notes){
+        require(signPunks <= _tokenIds, "getpunksInfo: no index .");
+        return (punksTwitter[signPunks],punksNote[signPunks]);
     }
     
     function getActiveState(uint256 signPunks) public view returns(bool){
