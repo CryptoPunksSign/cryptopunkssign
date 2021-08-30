@@ -31,6 +31,10 @@ contract CryptoPunksSign is ERC721URIStorage {
     mapping (uint256 => User) private punksUserBind;
     //record
     uint256 private _punksRecord;
+    
+    // A record of punks - hat
+    mapping (uint256 => uint256) private punksHat;
+    
 
     modifier onlyOwner() {
         require(msg.sender == _manager);
@@ -64,7 +68,7 @@ contract CryptoPunksSign is ERC721URIStorage {
         _punksRecord = 0;
     }
 
-    function mintCryptoPunksSign(string memory tokenURI,string memory twitter, string memory notes)
+    function mintCryptoPunksSign(uint256 hat,string memory tokenURI,string memory twitter, string memory notes)
         payable
         public
         returns (uint256)
@@ -83,10 +87,11 @@ contract CryptoPunksSign is ERC721URIStorage {
         _setTokenURI(newItemId, tokenURI);
         punksTwitter[newItemId] = twitter;
         punksNote[newItemId] = notes;
+        punksHat[newItemId] = hat;
         return newItemId;
     }
     
-    function cryptoPunksClaim(uint256 index,string memory tokenURI,string memory twitter,string memory notes)
+    function cryptoPunksClaim(uint256 hat,uint256 index,string memory tokenURI,string memory twitter,string memory notes)
         public
         returns (uint256)
     {
@@ -105,6 +110,7 @@ contract CryptoPunksSign is ERC721URIStorage {
         punksTwitter[newItemId] = twitter;
         punksNote[newItemId] = notes;
         _punksRecord++;
+        punksHat[newItemId] = hat;
         return newItemId;
     }
 
@@ -142,6 +148,9 @@ contract CryptoPunksSign is ERC721URIStorage {
         return true;
     }
 
+    function getpunksHat(uint256 index)public view returns(uint256){
+        return punksHat[index];
+    }
 
     function totalSupply() public view returns (uint256) {
         return _totalSupply;
@@ -153,6 +162,7 @@ contract CryptoPunksSign is ERC721URIStorage {
     }
     
     function getpunks()public view returns(uint256){
+        
         return _punksRecord;
     }
 
