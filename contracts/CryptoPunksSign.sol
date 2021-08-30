@@ -29,7 +29,9 @@ contract CryptoPunksSign is ERC721URIStorage {
     mapping (uint256 => string) private punksNote;
      // A record of the signpunks - user
     mapping (uint256 => User) private punksUserBind;
-    
+    //record
+    uint256 private _punksRecord;
+
     modifier onlyOwner() {
         require(msg.sender == _manager);
         _;
@@ -59,6 +61,7 @@ contract CryptoPunksSign is ERC721URIStorage {
     
     constructor() ERC721("CryptoPunksSign", "PunksSign") {
         _manager = msg.sender;
+        _punksRecord = 0;
     }
 
     function mintCryptoPunksSign(string memory tokenURI,string memory twitter, string memory notes)
@@ -101,9 +104,9 @@ contract CryptoPunksSign is ERC721URIStorage {
         punkSignBind[index] = newItemId;
         punksTwitter[newItemId] = twitter;
         punksNote[newItemId] = notes;
+        _punksRecord++;
         return newItemId;
     }
-    
 
     function updatePunksSign(uint256 index,string memory tokenURI)
         payable
@@ -149,6 +152,10 @@ contract CryptoPunksSign is ERC721URIStorage {
         return (punksTwitter[signPunks],punksNote[signPunks]);
     }
     
+    function getpunks()public view returns(uint256){
+        return _punksRecord;
+    }
+
     function getActiveState(uint256 signPunks) public view returns(bool){
         if(signPunks > _tokenIds){
             return false;
