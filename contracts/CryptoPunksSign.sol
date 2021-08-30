@@ -55,7 +55,7 @@ contract CryptoPunksSign is ERC721URIStorage {
         return mulDiv(1,1e18,100);
     } 
     
-    constructor() ERC721("CryptoPunksSign", "Ͼ") {
+    constructor() ERC721("CryptoPunksSign", "PunksSign") {
         _manager = msg.sender;
     }
 
