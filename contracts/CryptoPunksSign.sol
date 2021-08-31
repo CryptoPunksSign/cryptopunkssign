@@ -55,7 +55,7 @@ contract CryptoPunksSign is ERC721URIStorage {
     }
     
     function getMintPrice() public view returns(uint256){
-        uint256 state =  SafeMath.div(_tokenIds,100);
+        uint256 state =  SafeMath.div(_tokenIds,10);
         return mulDiv(state,1e18,100);
     } 
     
@@ -75,7 +75,7 @@ contract CryptoPunksSign is ERC721URIStorage {
     {
         require(_cryptoPunksDao != address(0x0),"mintCryptoPunksSign: address error !");
         require(_totalSupply < 10000,"mintCryptoPunksSign: Total 10000 !");
-        if(_tokenIds > 2){
+        if(_tokenIds > 10){
             uint256 fees = getMintPrice();
             require(fees <= msg.value,"mintCryptoPunksSign: msg.value error !");
             _cryptoPunksDao.transfer(fees);
@@ -156,9 +156,10 @@ contract CryptoPunksSign is ERC721URIStorage {
         return _totalSupply;
     }
 
-    function getpunksInfo(uint256 signPunks)public view returns(string memory twitter,string memory notes){
+
+    function getpunksInfo(uint256 signPunks)public view returns(string memory meta,string memory twitter,string memory notes){
         require(signPunks <= _tokenIds, "getpunksInfo: no index .");
-        return (punksTwitter[signPunks],punksNote[signPunks]);
+        return (tokenURI(signPunks),punksTwitter[signPunks],punksNote[signPunks]);
     }
     
     function getpunks()public view returns(uint256){
